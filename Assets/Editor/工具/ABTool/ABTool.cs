@@ -11,7 +11,7 @@ public class ABTool
 {
 #if UNITY_EDITOR
     [MenuItem("工具/ABTool/修改属性/设置为None")]
-    static void SetObjectAB()
+    static void SetObjectABNull()
     {
         //加载选中文件夹所有文件
         Object[] objarr = Selection.GetFiltered(typeof(Object), SelectionMode.DeepAssets);
@@ -23,15 +23,47 @@ public class ABTool
             if (!string.IsNullOrEmpty(fileName))
             {
                 AssetImporter _ai = AssetImporter.GetAtPath(url);//获取路径
-                //对名称设置后
-                //判断获取的文件名字拼接后是否相同
-                if (_ai.assetBundleName != fileName + ".assetbundle")
-                {//不相同强制赋值一次
-                    _ai.assetBundleName = fileName + ".assetbundle";
-                }
+                _ai.assetBundleName = null;//置空
             }
         }
     }
+
+    [MenuItem("工具/ABTool/修改属性/设置为自身名字")]
+    static void SetObjectABMyName()
+    {
+        //加载选中文件夹所有文件
+        Object[] objarr = Selection.GetFiltered(typeof(Object), SelectionMode.DeepAssets);
+        for (int i = 0; i < objarr.Length; i++)
+        {
+            string url = AssetDatabase.GetAssetPath(objarr[i]);//获取路径
+            string fileName = GetFileName(url);//判断文件名
+            //根据返回值，字符串是否是空值
+            if (!string.IsNullOrEmpty(fileName))
+            {
+                AssetImporter _ai = AssetImporter.GetAtPath(url);//获取路径
+                _ai.assetBundleName = null;//置空
+            }
+        }
+    }
+
+    [MenuItem("工具/ABTool/修改属性/打包")]
+    static void ABpack()
+    {
+        string _path = Application.streamingAssetsPath;//获取目标文件夹路径
+        //判断路径是否存在
+        if (!Directory.Exists(_path))
+        {//不存在新建
+            Directory.CreateDirectory(_path);
+        }
+        //打包
+        BuildPipeline.BuildAssetBundles(_path, BuildAssetBundleOptions.None, BuildTarget.StandaloneWindows64);
+        AssetDatabase.Refresh();//刷新编译器
+    }
+
+
+
+
+
     #region 配套的工具函数
     /// <summary>
     /// 获取文件的名字及拓展名
