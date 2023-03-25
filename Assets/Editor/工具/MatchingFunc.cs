@@ -9,26 +9,13 @@ using System.IO;
 /// </summary>
 public class MatchingFunc
 {
-    public static MatchingFunc inst
-    {
-        get
-        {
-            if (_inst == null)
-            {
-                _inst = new MatchingFunc();
-            }
-            return _inst;
-        }
-    }
-    static MatchingFunc _inst;
-
 #if UNITY_EDITOR
     /// <summary>
     /// 获取文件的名字及拓展名
     /// </summary>
     /// <param name="url">包含文件的完整路径</param>
     /// <returns></returns>
-    public string GetFileName(string _url)
+    public static string GetFileName(string _url)
     {
         string[] arr = _url.Split('/');//拆分路径,将路径以“/”区分
         string str = arr[arr.Length - 1];//定位到最后一段(包含后缀名的段)
@@ -43,7 +30,7 @@ public class MatchingFunc
     /// 递归拆分父子关系
     /// </summary>
     /// <param name="_obj">要拆分的物体</param>
-    public void ObjDetech(Transform _obj)
+    public static void ObjDetech(Transform _obj)
     {
         if (_obj==null)
         {
@@ -76,6 +63,27 @@ public class MatchingFunc
             index++;
         } while (obj);//没有要找的，退出
         return str;//文件名不冲突，返回名字
+    }
+
+    /// <summary>
+    /// 根据平台返回对应平台的资源存储路径
+    /// </summary>
+    /// <returns></returns>
+    public static string GetPlatformPath()
+    {
+        string strReturenPlatformPath = string.Empty;
+#if UNITY_STANDALONE_WIN
+        strReturenPlatformPath = Application.streamingAssetsPath;
+#elif UNITY_IPHONE
+            strReturenPlatformPath = Application.persistentDataPath;
+#elif UNITY_ANDROID
+            strReturenPlatformPath = Application.persistentDataPath;
+#endif
+        return strReturenPlatformPath;
+        /*
+         * 参考链接
+        https://demo.dandelioncloud.cn/article/details/1597031548094464001
+         */
     }
 #endif
 }

@@ -27,7 +27,7 @@ public class Gadget
         //限制只能选择一个
         if (Selection.gameObjects != null && Selection.gameObjects.Length == 1)
         {
-            MatchingFunc.inst.ObjDetech(Selection.gameObjects[0].transform);
+            MatchingFunc.ObjDetech(Selection.gameObjects[0].transform);
         }
         else
         {

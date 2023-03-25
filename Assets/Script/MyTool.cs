@@ -1,0 +1,215 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+using System;
+using DG.Tweening;
+using UnityEngine.Networking;
+/// <summary>
+/// 工具组
+/// 注意，需要挂载物体来使用
+/// </summary>
+public class MyTool
+{
+    private static MyTool _inst;
+    public static MyTool inst
+    {
+        get
+        {
+            return _inst;
+        }
+    }
+
+    /// <summary>
+    /// 击飞
+    /// </summary>
+    /// <param name="cc">被击飞物体控制器</param>
+    /// <param name="totalY">高低</param>
+    /// <param name="horVec">方向</param>
+    /// <param name="duration">时间</param>
+    /// <param name="_func">结束时执行的函数</param>
+    /// <returns></returns>
+    public void DOHit(CharacterController cc, float totalY, Vector3 horVec, float duration, Action _func)
+    {
+        Transform tf = cc.transform;
+        if (totalY == 0)
+        {
+            totalY = 0.1f;
+        }
+        float time = 0;
+        float lastT = 0, deltaT = 0;
+        //0 ->1的数值动画
+        Tween tween = DOTween.To(x => time = x, 0, 1, duration);
+        tween.SetEase(Ease.OutQuad);
+        //tween.SetLoops(2,LoopType.Yoyo);
+
+        Vector3 targetMove = horVec;
+        targetMove.y += totalY; //目标移动量
+        tween.onComplete = () =>
+        {
+            _func.Invoke();
+        };
+        tween.OnUpdate(() =>
+        {
+            deltaT = time - lastT;
+            lastT = time;
+
+            Vector3 delta = targetMove * deltaT;
+            cc.Move(delta);
+        });
+    }
+
+    /// <summary>
+    /// 在DOTween时，延时物体显隐
+    /// </summary>
+    /// <param name="_obj">要控制的物体</param>
+    /// <param name="_time">时间</param>
+    /// <returns></returns>
+    public IEnumerator DWEActive(GameObject _obj, float _time, bool _bool)
+    {
+        yield return new WaitForSeconds(_time);
+        _obj.gameObject.SetActive(_bool);
+    }
+
+    /// <summary>
+    /// 设置DOTween动画是否受时间影响
+    /// </summary>
+    /// <param name="_dwt">动画组</param>
+    /// <param name="_bool">布尔值</param>
+    public void SetDWTUpdata(Sequence _dwt, bool _bool = true)
+    {
+        _dwt.SetUpdate(_bool);
+    }
+
+    /// <summary>
+    /// 读取物品图片
+    /// </summary>
+    /// <param name="_url">文件地址</param>
+    /// <param name="_img">显示图片的位置</param>
+    /// <returns></returns>
+    public IEnumerator ToolGetPic(string _url, Image _img)
+    {
+        UnityWebRequest q = UnityWebRequestTexture.GetTexture(_url);
+        yield return q.SendWebRequest();//等待读取结束
+        if (q.isDone)
+        {
+            Texture2D t = DownloadHandlerTexture.GetContent(q);
+            Sprite s = Sprite.Create(t,
+                new Rect(0, 0,
+                t.width, t.height),
+               Vector2.zero);//设置图片格式
+            _img.overrideSprite = s;//图片设置
+        }
+        _img.gameObject.SetActive(true);
+    }
+
+    /// <summary>
+    /// 加载AssetBundle文件
+    /// </summary>
+    /// <param name="fileName">名字</param>
+    /// <param name="type">格式</param>
+    /// <param name="target_obj">要挂载的目标物体</param>
+    /// <returns></returns>
+    public IEnumerator LoadAB(string fileName, string type,GameObject target_obj=null)
+    {
+        //拼接路径
+        string url = Application.streamingAssetsPath + "/" + fileName + "." + type + ".assetbundle";
+        UnityWebRequest q = UnityWebRequestAssetBundle.GetAssetBundle(url);//加载
+        yield return q.SendWebRequest();
+        if (q.isDone)
+        {
+            AssetBundle _a = DownloadHandlerAssetBundle.GetContent(q);//转换格式
+            UnityEngine.Object _obj = _a.LoadAsset(fileName);//加载
+            GameObject _ob = GameObject.Instantiate(_obj) as GameObject;//复制
+            _ob.transform.SetParent(target_obj.transform);
+            _ob.transform.localPosition = Vector3.zero;
+        }
+    }
+
+    /// <summary>
+    /// 系统的时间
+    /// </summary>
+    /// <returns></returns>
+    public string NowSystemTime()
+    {
+        return string.Format("{0:D2}:{1:D2}:{2:D2} ", 
+            DateTime.Now.Hour, DateTime.Now.Minute, DateTime.Now.Second);
+    }
+
+
+    #region 废弃
+    //废弃
+
+    AsyncOperation asy;
+    #region 系统时间
+
+    private int hour;
+    private int minute;
+    private int second;
+    private int year;
+    private int month;
+    private int day;
+
+    /// <summary>
+    /// 控制台输出时间
+    /// </summary>
+    /// <returns>时间字符串</returns>
+    public string aNowSyetemTime()
+    {
+        return null;
+
+        ////获取当前时间
+        //hour = DateTime.Now.Hour;
+        //minute = DateTime.Now.Minute;
+        //second = DateTime.Now.Second;
+        //year = DateTime.Now.Year;
+        //month = DateTime.Now.Month;
+        //day = DateTime.Now.Day;
+
+        ////格式化显示当前时间
+        ////return string.Format("{0:D2}:{1:D2}:{2:D2} " + "{3:D4}/{4:D2}/{5:D2}", hour, minute, second, year, month, day);
+        //return string.Format("{0:D2}:{1:D2}:{2:D2} " , hour, minute, second);
+    }
+    #endregion
+    /// <summary>
+    /// 切换场景
+    /// </summary>
+    /// <param name="_next_name">下一个场景名字</param>
+    /// <param name="_img">进图条图片</param>
+    /// <param name="_text">进度条显示</param>
+    /// <param name="_false">假占比</param>
+    /// <param name="_true">真占比</param>
+    /// <returns></returns>
+    /// 
+    public IEnumerator SceneLoad(string _next_name, Image _img, Text _text = null, float _false = 0.7f, float _false_time = 3f, float _true = 0.3f)
+    {
+        yield return 1f;
+        _img.DOFillAmount(_false, _false_time).OnUpdate(() => {
+            if (_text != null)
+            {
+                _text.text = (_img.fillAmount * 100).ToString("0.00") + "%";
+            }
+        });
+        yield return new WaitForSeconds(_false_time + 0.2f);
+        asy = SceneManager.LoadSceneAsync(_next_name);
+        asy.allowSceneActivation = false;
+        float f = 0;
+        while (true)
+        {
+            f = _false + _true / 0.9f * asy.progress;
+            _img.fillAmount = f;
+            _text.text = (f * 100).ToString("0.00") + "%";
+            yield return new WaitForSeconds(0.1f);
+            if (asy.progress >= 0.9f)
+            {
+                break;
+            }
+        }
+        _img.fillAmount = 1f;
+        _text.text = "100.00%";
+        asy.allowSceneActivation = true;
+    }
+
+    #endregion 
+}
