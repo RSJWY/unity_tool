@@ -24,6 +24,7 @@ public class AR相关 : MonoBehaviour
                 if (Physics.Raycast(Camera.main.ScreenPointToRay(touch.position), out hit, 1000, 1 << 8))
                 {
                     //从屏幕发射一道射线，碰到物体
+                    //参考https://docs.unity.cn/cn/2019.4/ScriptReference/Physics.Raycast.html
                 }
                 //单击事件
                 break;
@@ -84,5 +85,8 @@ public class AR相关 : MonoBehaviour
         }
     }
     #endregion
+
+
+
 
 }
