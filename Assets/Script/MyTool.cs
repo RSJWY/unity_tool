@@ -8,7 +8,6 @@ using DG.Tweening;
 using UnityEngine.Networking;
 /// <summary>
 /// 工具组
-/// 注意，需要挂载物体来使用
 /// </summary>
 public class MyTool
 {
@@ -136,7 +135,29 @@ public class MyTool
         return string.Format("{0:D2}:{1:D2}:{2:D2} ", 
             DateTime.Now.Hour, DateTime.Now.Minute, DateTime.Now.Second);
     }
-
+#if UNITY_EDITOR
+    /// <summary>
+    /// 检查路径下是否有重命名的文件，并重新指定一个没有任何冲突的名字
+    /// 规则为：类型名字+_+编号+后缀
+    /// </summary>
+    /// <param name="_url">路径</param>
+    /// <param name="_suffix">后缀名，默认为 "*.asset" </param>
+    /// <returns></returns>
+    public static string TryGetName<T>(string _url, string _suffix = ".asset")
+    {
+        //新建初始参数
+        string str = "";
+        int index = 0;
+        UnityEngine.Object obj = null;
+        do
+        {
+            str = _url + "/" + typeof(T).Name + "_" + index + _suffix;//拼接
+            obj = UnityEditor.AssetDatabase.LoadAssetAtPath(str, typeof(T));//尝试加载
+            index++;
+        } while (obj);//没有要找的，退出
+        return str;//文件名不冲突，返回名字
+    }
+#endif
 
     #region 废弃
     //废弃

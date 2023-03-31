@@ -19,7 +19,7 @@ public class HighlightObj : MonoBehaviour
     }
     private void Awake()
     {
-        mat = Resources.Load<Material>("HighlightGreen");//加载材质球
+        mat = Resources.Load<Material>("Material/HighlightGreen");//加载材质球
         if (mat_root == null)
         {
             mat_root = new GameObject("mat_root");//新建总物体
@@ -28,6 +28,11 @@ public class HighlightObj : MonoBehaviour
     }
     // Start is called before the first frame update
     void Start()
+    {
+        SetHigLight();
+    }
+
+    void SetHigLight()
     {
         //基础物体
         MeshFilter[] _mfarr = transform.GetComponentsInChildren<MeshFilter>();
@@ -45,6 +50,12 @@ public class HighlightObj : MonoBehaviour
 
                 _mf_obj.transform.position = _mf[i].transform.position;
                 _mf_obj.transform.rotation = _mf[i].transform.rotation;
+
+                if (_mf.Count == 1)
+                {
+                    _mf_obj.transform.localScale = _mf[i].transform.localScale;
+                    return;
+                }
                 if (_mf[i].gameObject == gameObject)//如果当前材质物体是挂载在当前物体上
                 {
                     _mf_obj.transform.localScale = Vector3.one;
