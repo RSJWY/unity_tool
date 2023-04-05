@@ -15,7 +15,7 @@ public class MyEventListener : MonoBehaviour
     /// <param name="obj">物体</param>
     /// <param name="isUI">是否是UI</param>
     /// <returns></returns>
-    public static MyEventListener Get(GameObject obj,bool isUI)
+    public static MyEventListener Get(GameObject obj,bool isUI=true)
     {
         //检查是否挂载有此脚本
         MyEventListener mel = obj.GetComponent<MyEventListener>();
@@ -31,7 +31,7 @@ public class MyEventListener : MonoBehaviour
             rig = obj.AddComponent<Rigidbody>();
         }
         Collider[] col = obj.GetComponentsInChildren<Collider>();
-        if (col==null&&col.Length==0)
+        if (col==null||col.Length==0)
         {
             col = new Collider[1];//创建一个新的碰撞器
             //增加一个方形碰撞器
@@ -42,7 +42,7 @@ public class MyEventListener : MonoBehaviour
         {
             //关闭重力
             rig.useGravity = false;
-            rig.isKinematic = true;
+            //rig.isKinematic = true;
             //获取尺寸
             RectTransform rt = obj.GetComponent<RectTransform>();
             //碰撞器尺寸匹配
