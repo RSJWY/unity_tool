@@ -24,15 +24,16 @@ public class MyMsg
     }
 
     #region 拾取与放下
-    private Dictionary<string, Action<Transform>> msg_obj = new Dictionary<string, Action<Transform>>();//消息提示
+    private Dictionary<string, Action<Transform, Transform>> msg_obj = new Dictionary<string, Action<Transform, Transform>>();//事件库
     /// <summary>
-    /// 注册事件
+    /// 注册事件-拾取与放下
     /// </summary>
     /// <param name="_name">事件名</param>
     /// <param name="_func">事件函数</param>
-    public void Add(string _name, Action<Transform> _func)
+    /// <para>需要接收手柄碰到的物体和信号发出物体</para>
+    public void Add(string _name, Action<Transform, Transform> _func)
     {
-        if (msg_dic.ContainsKey(_name))
+        if (msg_obj.ContainsKey(_name))
         {
             msg_obj[_name] += _func;
         }
@@ -42,11 +43,11 @@ public class MyMsg
         }
     }
     /// <summary>
-    /// 取消事件注册
+    /// 取消事件注册-拾取与放下
     /// </summary>
     /// <param name="_name">事件名</param>
-    /// <param name="_func">事件函数</param>
-    public void Remove(string _name, Action<Transform> _func)
+    /// <param name="_func">事件函数</param> 
+    public void Remove(string _name, Action<Transform, Transform> _func)
     {
         if (msg_obj.ContainsKey(_name))
         {
@@ -58,64 +59,65 @@ public class MyMsg
         }
     }
     /// <summary>
-    /// 使用事件
+    /// 使用事件-拾取与放下
     /// </summary>
     /// <param name="_name">事件名</param>
-    /// <param name="_str">想要发送的信息</param>
-    public void Send(string _name, Transform _trans)
+    /// <param name="_trans">目标物</param>
+    /// <param name="signalsource">消息源</param>
+    public void Send(string _name, Transform _trans, Transform signalsource)
     {
         if (msg_obj.ContainsKey(_name))
         {
-            msg_obj[_name]?.Invoke(_trans);
+            msg_obj[_name]?.Invoke(_trans,signalsource);
         }
     }
 
     #endregion
 
     #region 信息提示框
-    private Dictionary<string, Action<string>> msg_dic = new Dictionary<string, Action<string>>();//消息提示
+    private Dictionary<string, Action<string>> msg_info_dic = new Dictionary<string, Action<string>>();//消息提示
     /// <summary>
-    /// 注册事件
+    /// 注册事件-信息提示框
     /// </summary>
     /// <param name="_name">事件名</param>
     /// <param name="_func">事件函数</param>
     public void Add(string _name, Action<string> _func)
     {
-        if (msg_dic.ContainsKey(_name))
+        if (msg_info_dic.ContainsKey(_name))
         {
-            msg_dic[_name] += _func;
+            msg_info_dic[_name] += _func;
         }
         else
         {
-            msg_dic.Add(_name, _func);
+            msg_info_dic.Add(_name, _func);
         }
     }
     /// <summary>
-    /// 取消事件注册
+    /// 取消事件注册-信息提示框
     /// </summary>
     /// <param name="_name">事件名</param>
     /// <param name="_func">事件函数</param>
     public void Remove(string _name, Action<string> _func)
     {
-        if (msg_dic.ContainsKey(_name))
+        if (msg_info_dic.ContainsKey(_name))
         {
-            msg_dic[_name] -= _func;
+            msg_info_dic[_name] -= _func;
         }
-        if (msg_dic[_name] == null)
+        if (msg_info_dic[_name] == null)
         {
-            msg_dic.Remove(_name);
+            msg_info_dic.Remove(_name);
         }
     }
     /// <summary>
-    /// 使用事件
+    /// 使用事件-信息提示框
     /// </summary>
     /// <param name="_name">事件名</param>
     /// <param name="_str">想要发送的信息</param>
     public void Send(string _name, string _str)
     {
-        if (msg_dic.ContainsKey(_name))
+        if (msg_info_dic.ContainsKey(_name))
         {
-            msg_dic[_name]?.Invoke(_str);
+            msg_info_dic[_name]?.Invoke(_str);
         }
     }
     #endregion
@@ -134,7 +136,19 @@ public class MsgEventName
     /// </summary>
     public const string InHand = "InHand";
     /// <summary>
-    /// 手持物品——放下
+    /// 手持物品—放下
     /// </summary>
     public const string OutHand = "OutHand";
+    /// <summary>
+    /// 高亮—打开
+    /// </summary>
+    public const string InHigLig = "InHigLig";
+    /// <summary>
+    /// 高亮—关闭
+    /// </summary>
+    public const string OutHigLig = "OutHigLig";
+    /// <summary>
+    /// 点击
+    /// </summary>
+    public const string InOnClick = "InOnClick";
 }
