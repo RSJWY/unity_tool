@@ -10,13 +10,13 @@ public class HighlightObj : MonoBehaviour
     Material mat;//高亮材质球
     GameObject mat_root;//材质物体
 
-    public GameObject _mat_root
-    {
-        get
-        {
-            return mat_root;
-        }
-    }
+    //public GameObject higlig_obj
+    //{
+    //    get
+    //    {
+    //        return mat_root;
+    //    }
+    //}
     private void Awake()
     {
         mat = Resources.Load<Material>("Material/HighlightGreen");//加载材质球
@@ -24,7 +24,18 @@ public class HighlightObj : MonoBehaviour
         {
             mat_root = new GameObject("mat_root");//新建总物体
             mat_root.transform.SetParent(transform);
+
+            mat_root.transform.localPosition = Vector3.zero;
+            mat_root.transform.localEulerAngles = Vector3.zero;
         }
+    }
+    /// <summary>
+    /// 设置高亮状态
+    /// </summary>
+    /// <param name="isHL">布尔值，默认为fasle</param>
+    public void SetShowHL(bool isHL=false)
+    {
+        mat_root.SetActive(isHL);
     }
     // Start is called before the first frame update
     void Start()
@@ -53,17 +64,21 @@ public class HighlightObj : MonoBehaviour
 
                 if (_mf.Count == 1)
                 {
+                    //存在当前物体没有子物体时，如果scale被修改，需要同步状态
                     _mf_obj.transform.localScale = _mf[i].transform.localScale;
-                    return;
-                }
-                if (_mf[i].gameObject == gameObject)//如果当前材质物体是挂载在当前物体上
-                {
-                    _mf_obj.transform.localScale = Vector3.one;
                 }
                 else
                 {
-                    _mf_obj.transform.localScale = _mf[i].transform.localScale;
+                    if (_mf[i].gameObject == gameObject)//如果当前材质物体是挂载在当前物体上
+                    {
+                        _mf_obj.transform.localScale = Vector3.one;
+                    }
+                    else
+                    {
+                        _mf_obj.transform.localScale = _mf[i].transform.localScale;
+                    }
                 }
+               
             }
         }
         //特殊物体
