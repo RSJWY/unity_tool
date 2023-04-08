@@ -16,6 +16,10 @@ public class MyTool
     {
         get
         {
+            if (_inst==null)
+            {
+                _inst = new MyTool();
+            }
             return _inst;
         }
     }
@@ -141,14 +145,12 @@ public class MyTool
     #region Transform相关设置
     /// <summary>
     /// 快速设置Transform位置信息
-    /// <para>默认位置与旋转皆为0，scale为1</para>
+    /// <para>默认位置与旋转皆为0，scale为1，且rotation值通过欧拉角修改</para>
     /// </summary>
-    /// <param name="islocal"></param>
-    /// <param name="target"></param>
-    /// <param name="position"></param>
-    /// <param name="EulerAngle"></param>
-    /// <param name="localscale"></param>
-    public void SetNewTransformInfo(bool islocal, Transform target)
+    /// <param name="islocal">世界坐标还是相对坐标</param>
+    /// <param name="isScale">是否修改scaale值,如修改</param>
+    /// <param name="target">目标的Transform组件</param>
+    public void SetNewTransformInfo(Transform target,bool islocal,bool isScale=false)
     {
         //判断转换相对还是世界
         if (islocal)
@@ -161,19 +163,21 @@ public class MyTool
             target.transform.position =Vector3.zero;
             target.transform.eulerAngles = Vector3.zero;
         }
-        target.transform.localScale= Vector3.one;
+        if (isScale)
+        {
+            target.transform.localScale = Vector3.one;
+        }
     }
 
     /// <summary>
     /// 快速设置Transform位置信息
-    /// <para>default 默认为 Vector3(0,0,0)</para>
+    /// <para>default 默认为 Vector3(0,0,0)，localscale值将为自身原值</para>
     /// </summary>
     /// <param name="islocal">世界坐标还是相对坐标，</param>
     /// <param name="target">目标的Transform组件</param>
     /// <param name="position">POS值</param>
     /// <param name="EulerAngle">Euler值</param>
-    /// <param name="Rotation">Euler值</param>
-    /// <param name="localscale"></param>
+    /// <param name="localscale">scale值，默认为自身原值</param>
     public void SetNewTransformInfo(bool islocal, Transform target,
         Vector3 position=default, Vector3 EulerAngle = default, Vector3 localscale = default)
     {
@@ -188,7 +192,7 @@ public class MyTool
             target.transform.position = position == default ? Vector3.zero : position;
             target.transform.eulerAngles = EulerAngle == default ? Vector3.zero : EulerAngle;
         }
-        target.transform.localScale = localscale == default ? Vector3.one : localscale;
+        target.transform.localScale = localscale == default ? target.transform.localScale: localscale;
     }
 
     /// <summary>
@@ -201,7 +205,7 @@ public class MyTool
     /// <param name="position">POS值</param>
     /// <param name="Rotation">四元数值</param>
     /// <param name="Rotation">Euler值</param>
-    /// <param name="localscale"></param>
+    /// <param name="localscale">scale值，默认为自身原值</param>
     public void SetNewTransformInfo(bool islocal, Transform target,
         Vector3 position = default, Quaternion Rotation = default, Vector3 localscale = default)
     {
@@ -222,8 +226,11 @@ public class MyTool
             target.transform.position = position == default ? Vector3.zero : position;
             target.transform.rotation = Rotation;
         }
-        target.transform.localScale = localscale == default ? Vector3.zero : localscale;
+        target.transform.localScale = localscale == default ? target.transform.localScale : localscale;
     }
+
+
+
     #endregion
 
     #region 废弃
