@@ -333,4 +333,70 @@ public class MyTool
         return str;//文件名不冲突，返回名字
     }
 #endif
+#region 查询网络和日期
+ /// <summary>
+    /// 查询网络连接是否有问题
+    /// </summary>
+    /// <param name="_uwr"></param>
+    /// <returns></returns>
+    public static bool IsWebError(UnityWebRequest _uwr)
+    {
+        if (_uwr.result == UnityWebRequest.Result.ConnectionError|| _uwr.result == UnityWebRequest.Result.ProtocolError)
+        {
+            return true;
+        }
+        return false;
+    }
+
+    static int hour;
+    static int minute;
+    static int second;
+    static int year;
+    static int month;
+    static int day;
+    public static string UpdateTime()
+    {
+        //获取当前时间
+        hour = DateTime.Now.Hour;
+        minute = DateTime.Now.Minute;
+        second = DateTime.Now.Second;
+        year = DateTime.Now.Year;
+        month = DateTime.Now.Month;
+        day = DateTime.Now.Day;
+
+        ////格式化显示当前时间
+        return string.Format
+            ("{0:D2}:{1:D2}:{2:D2} " + "{3:D4}-{4:D2}-{5:D2}",
+            hour, minute, second, year, month, day);
+    }
+
+    /// <summary>
+    /// 获取周几
+    /// </summary>
+    /// <returns></returns>
+    public static string GetWeek()
+    {
+        string _str = "星期";
+        switch (DateTime.Now.DayOfWeek)
+        {
+            case DayOfWeek.Monday:
+                return _str+"一";
+            case DayOfWeek.Tuesday:
+                return _str + "二";
+            case DayOfWeek.Wednesday:
+                return _str + "三";
+            case DayOfWeek.Thursday:
+                return _str + "四";
+            case DayOfWeek.Friday:
+                return _str + "五";
+            case DayOfWeek.Saturday:
+                return _str + "六";
+            default:
+                return _str + "日";
+        }
+    }
+
+
+ #endregion
+
 }
