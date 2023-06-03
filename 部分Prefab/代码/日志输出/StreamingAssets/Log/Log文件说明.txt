@@ -1,2 +1,4 @@
 StreamingAssets/Log
 文件夹是日志配置以及日志输出文件夹，不要动和删除
+log4net.config//配置文件，勿动
+Editor//文件夹是开发模式下的输出目录
