@@ -1,2 +1,0 @@
-StreamingAssets/Log
-文件夹是日志配置以及日志输出文件夹，不要动和删除

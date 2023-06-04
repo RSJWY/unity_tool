@@ -1,6 +1,3 @@
-StreamingAssets/Log
-文件夹是日志配置以及日志输出文件夹，不要动和删除
-LoggerOutPut
-文件夹是日志输出
-EditorLog
-文件夹是编辑器内日志输出
+StreamingAssets/Log文件夹是日志配置以及日志输出文件夹，不要动和删除
+LoggerOutPut文件夹是日志输出
+EditorLog是开发模式下的编辑器内日志输出，方便搜索
