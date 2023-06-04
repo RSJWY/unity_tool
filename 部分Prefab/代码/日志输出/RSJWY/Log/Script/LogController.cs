@@ -13,16 +13,14 @@ namespace RSJWY.Log
     {
         private void Awake()
         {
-            Logger.Instance.Init();
+            Logger.SetUnityDebugOutPut();
             DontDestroyOnLoad(gameObject);
         }
 
         private void OnApplicationQuit()
         {
-            Logger.Instance.Close();
+            Logger.SetUnityDebugOutPut(false);
         }
-
-      
     }
 }
 

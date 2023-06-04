@@ -9,72 +9,47 @@ namespace RSJWY.Log
     /// 日志配置，不要直接引用，已做调用范围限制处理，仅 RSJWY.Log命名空间可调用
     /// 引用：https://passion.blog.csdn.net/article/details/127886423?spm=1001.2101.3001.6650.5&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-5-127886423-blog-119851412.235%5Ev36%5Epc_relevant_anti_vip_base&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-5-127886423-blog-119851412.235%5Ev36%5Epc_relevant_anti_vip_base&utm_relevant_index=10
     /// </summary>
-    internal class Logger
+    public static class Logger
     {
         private static ILog log = LogManager.GetLogger("FileLogger"); //获取记录器
 
-        private static Logger _Instance;
-        /// <summary>
-        /// 是否开启日志监听
-        /// </summary>
-        bool isOpen;
-
-        internal static Logger Instance
-        {
-            get
-            {
-                if (_Instance == null)
-                {
-                    _Instance = new Logger();
-                }
-                return _Instance;
-            }
-        }
-
-        Logger()
+        static bool isOpen;
+        static Logger()
         {
             isOpen = false;
-        }
-
-        /// <summary>
-        /// 初始化，需要从外部调用
-        /// </summary>
-        internal void Init()
-        {
-            if (isOpen)
+            string str_filePath = Application.streamingAssetsPath + "/Log/LogOutPut/";
+            //判断要输出的路径是否存在，如果不存在，则创建
+            if (!Directory.Exists(str_filePath))
             {
-                return;
+                Directory.CreateDirectory(str_filePath);//目录不存在，创建
             }
-            isOpen = true;
-
-            Application.logMessageReceivedThreaded += onLogMessageReceived; //添加unity日志监听
-            string time = string.Format(
-                "{3:D4}_{4:D2}_{5:D2}_{0:D2}_{1:D2}_{2:D2}",
-                DateTime.Now.Hour, DateTime.Now.Minute, DateTime.Now.Second,
-                DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day);//获取当前时间
 
             //ApplicationLogPath和LogFileName在log4net.config中使用
             FileInfo file = new System.IO.FileInfo(Application.streamingAssetsPath + "/Log/log4net.config"); //获取log4net配置文件
-            GlobalContext.Properties["ApplicationLogPath"] = Path.Combine(Application.streamingAssetsPath, "Log"); //日志生成的路径
-            GlobalContext.Properties["LogFileName"] = "log_" + time; //生成日志的文件名
+            GlobalContext.Properties["ApplicationLogPath"] = Path.Combine(str_filePath); //日志生成的路径
+            GlobalContext.Properties["LogFileName"] = "日志"; //生成日志的文件名
             log4net.Config.XmlConfigurator.ConfigureAndWatch(file); //加载log4net配置文件
 
-            Debug.Log("日志初始化，时间为：" + time);
+            Log("构造初始化完成，时间：{0}", GetNowTime());
         }
 
         /// <summary>
-        /// 关闭
+        /// 设置UnityDebug事件监听
         /// </summary>
-        internal void Close()
+        internal static void SetUnityDebugOutPut(bool _isOpen=true)
         {
-            string time = string.Format(
-               "{3:D4}_{4:D2}_{5:D2}_{0:D2}_{1:D2}_{2:D2}",
-               DateTime.Now.Hour, DateTime.Now.Minute, DateTime.Now.Second,
-               DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day);//获取当前时间
-
-            Debug.Log("日志关闭，时间为：" + time);
-            Application.logMessageReceivedThreaded -= onLogMessageReceived; //添加unity日志监听
-            isOpen = false;
+            if (_isOpen == true && isOpen == false)
+            {
+                Application.logMessageReceivedThreaded += onLogMessageReceived; //添加unity日志监听
+                Log("开始UnityDebug事件监听，时间：{0}", GetNowTime());
+                isOpen = true;
+            }
+            if (_isOpen == false && isOpen == true)
+            {
+                Application.logMessageReceivedThreaded -= onLogMessageReceived; //添加unity日志监听
+                Log("关闭UnityDebug事件监听，时间：{0}", GetNowTime());
+                isOpen = false;
+            }
         }
 
         /// <summary>
@@ -83,7 +58,7 @@ namespace RSJWY.Log
         /// <param name="condition">状态</param>
         /// <param name="stackTrace">线程</param>
         /// <param name="type">事件类型</param>
-        private void onLogMessageReceived(string condition, string stackTrace, LogType type)
+        static void onLogMessageReceived(string condition, string stackTrace, LogType type)
         {
             switch (type)
             {
@@ -111,5 +86,91 @@ namespace RSJWY.Log
                     break;
             }
         }
+
+        static string GetNowTime()
+        {
+            string time = string.Format(
+               "{3:D4}_{4:D2}_{5:D2}_{0:D2}_{1:D2}_{2:D2}",
+               DateTime.Now.Hour, DateTime.Now.Minute, DateTime.Now.Second,
+               DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day);//获取当前时间
+            return time;
+        }
+
+        #region 单独输出错误信息
+
+        /// <summary>
+        /// 正常Debug
+        /// </summary>
+        public static void Log(object message)
+        {
+            log.Debug(message);
+        }
+        /// <summary>
+        /// 正常Debug
+        /// </summary>
+        public static void Log(string format, params object[] args)
+        {
+            log.DebugFormat(format, args);
+        }
+        /// <summary>
+        /// 信息
+        /// </summary>
+        public static void LogInfo(object message)
+        {
+            log.Info(message);
+        }
+        /// <summary>
+        /// 信息
+        /// </summary>
+        public static void LogInfo(string format, params object[] args)
+        {
+            log.InfoFormat(format, args);
+        }
+
+        /// <summary>
+        /// 警告
+        /// </summary>
+        public static void Logwarn(object message)
+        {
+            log.Warn(message);
+        }
+        /// <summary>
+        /// 警告
+        /// </summary>
+        public static void LogWarn(string format, params object[] args)
+        {
+            log.WarnFormat(format, args);
+        }
+
+        /// <summary>
+        /// 错误
+        /// </summary>
+        public static void LogError(object message)
+        {
+            log.Error(message);
+        }
+        /// <summary>
+        /// 错误
+        /// </summary>
+        public static void LogError(string format, params object[] args)
+        {
+            log.ErrorFormat(format, args);
+        }
+
+        /// <summary>
+        /// 致命错误
+        /// </summary>
+        public static void LogFatal(object message)
+        {
+            log.Fatal(message);
+        }
+        /// <summary>
+        /// 致命错误
+        /// </summary>
+        public static void LogFatal(string format, params object[] args)
+        {
+            log.FatalFormat(format, args);
+        }
+        #endregion
     }
 }
