@@ -1,0 +1,11 @@
+StreamingAssets/Log
+文件夹是日志配置以及日志输出文件夹，不要动和删除
+<<<<<<< HEAD
+LoggerOutPut
+文件夹是日志输出
+EditorLog
+文件夹是编辑器内日志输出
+=======
+log4net.config//配置文件，勿动
+Editor//文件夹是开发模式下的输出目录
+>>>>>>> 1e825d341d34613b9ac942fe880877f8bcd2fd92
