@@ -1,6 +1,0 @@
-输出文件夹存在 ,路径是D:/unity/工具类调试/Assets/StreamingAssets/Log/EditorLog/
-UnityEngine.Debug:Log (object)
-UnityOutputLogHelper:OutputLog () (at Assets/RSJWY/Log/Editor/UnityOutputLogHelper.cs:114)
-UnityOutputLogHelper/UnityOutputLogHelperWindow:OnGUI () (at Assets/RSJWY/Log/Editor/UnityOutputLogHelper.cs:42)
-UnityEngine.GUIUtility:ProcessEvent (int,intptr,bool&)
-
