@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-namespace RSJWY.Log
+namespace Log
 {
     /// <summary>
     /// 日志管理器，请不要多继承本类，用制作好的预制体！！
