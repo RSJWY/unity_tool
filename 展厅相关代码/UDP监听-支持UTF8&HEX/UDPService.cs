@@ -10,17 +10,17 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using UnityEngine;
 
-internal class UDPService
+public class UDPService
 {
-    static object tihslock=new();
+    static object thisLock = new();
     static UDPService _instance;
-    internal static UDPService instance
+    public static UDPService instance
     {
         get
         {
             if (_instance == null)
             {
-                lock (tihslock)
+                lock (thisLock)
                 {
                     if (_instance == null)
                     {
@@ -31,8 +31,6 @@ internal class UDPService
             return _instance;
         }
     }
-
-
     /// <summary>
     /// 监听端口
     /// </summary>
@@ -88,7 +86,7 @@ internal class UDPService
     /// </summary>
     /// <param name="_ip"></param>
     /// <param name="_port"></param>
-    internal void Init(string _ip, int _port)
+    public void Init(string _ip, int _port)
     {
         ip = IPAddress.Parse(_ip);
         port = _port;
@@ -99,7 +97,7 @@ internal class UDPService
     /// </summary>
     /// <param name="_ipAddress"></param>
     /// <param name="_port"></param>
-    internal void Init(IPAddress _ipAddress, int _port)
+    public void Init(IPAddress _ipAddress, int _port)
     {
         ip = _ipAddress;
         port = _port;
@@ -110,7 +108,7 @@ internal class UDPService
     /// 初始化
     /// </summary>
     /// <param name="_port"></param>
-    void Init()
+    public void Init()
     {
         if (isInit)
         {
@@ -231,8 +229,8 @@ internal class UDPService
             }
         }
     }
-    //取出接收到的指令列信息
-    internal string GetMsgData()
+
+    public string GetMsgData()
     {
         if (MsgQueue.Count <= 0)
         {
@@ -242,8 +240,7 @@ internal class UDPService
         MsgQueue.TryDequeue(out msg);
         return msg;
     }
-    //unityupdate调用，检测部分线程是否异常退出
-    internal void UnityUpdate()
+    public void UnityUpdate()
     {
         //线程是否出错
         if (MsgThread != null)
@@ -264,8 +261,6 @@ internal class UDPService
             return;
         }
     }
-
-
     public static bool IsHex(string input)
     {
         // 正则表达式匹配16进制值  
