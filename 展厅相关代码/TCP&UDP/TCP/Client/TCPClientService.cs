@@ -8,11 +8,12 @@ using System.Net.Sockets;
 using UnityEngine;
 
 
-namespace ClientService{
+namespace ClientService
+{
     /// <summary>
     ///TCP 客户端服务
     /// </summary>
-    internal class TCPClientService:BaseInstance<TCPClientService>
+    internal class TCPClientService : BaseInstance<TCPClientService>
     {
         /// <summary>
         /// 网络链接事件枚举
@@ -231,7 +232,7 @@ namespace ClientService{
             m_Port = port;
             isInit = true;
 
-            Debug.Log($"开始链接，配置的信息为：IP:{m_IP}，Port：{m_Port}");
+            Debug.Log($"客户端消息：开始链接服务器，目标：IP:{m_IP}，Port：{m_Port}");
         }
         /// <summary>
         /// 初始状态，初始化变量
@@ -243,7 +244,7 @@ namespace ClientService{
             m_WriteQueue = new ConcurrentQueue<ByteArray>();//消息发送队列
             m_Connecting = false;//状态关闭
             m_Closing = false;
-            msgQueue = new ConcurrentQueue<MsgBase>();//接收消息处理队列（所有接收到要处理的消息
+            msgQueue = new();//接收消息处理队列（所有接收到要处理的消息
         }
         /// <summary>
         /// 连接完成回调函数
@@ -279,21 +280,21 @@ namespace ClientService{
 
                 //开始接收
                 m_Socket.BeginReceive(m_ReadBuff.Bytes, m_ReadBuff.WriteIndex, m_ReadBuff.Remain, 0, ReceiveCallBack, m_Socket);
-                
-                Debug.LogFormat("Socket连接成功 成功连接上服务器！Socket：{0}", m_Socket.RemoteEndPoint.ToString());
+
+                Debug.Log($"客户端消息：Socket连接成功 成功连接上服务器！Socket：{m_Socket.RemoteEndPoint.ToString()}");
             }
             catch (SocketException ex)
             {
                 //会无限重连，直到重新连接成功
-                Debug.LogError($"Socket连接失败,等待3秒后重新尝试链接 和服务器连接失败原因:{ex.ToString()}");
+                Debug.LogWarning($"Socket连接失败,等待3秒后重新尝试链接 和服务器连接失败原因:{ex.ToString()}");
                 Thread.Sleep(3000);//延时处理
                 //开始接收
                 m_Socket.BeginConnect(m_IP, m_Port, ConnectCallBack, m_Socket);//异步连接服务器，以免堵塞unity主线程
-                Debug.LogFormat("开始重连，配置信息为：IP:{0},Port：{1}", m_IP.ToString(), m_Port.ToString());
+                Debug.LogWarning($"开始重连，配置信息为：IP:{m_IP.ToString()},Port：{m_Port.ToString()}");
                 m_Connecting = true;
             }
         }
-    #endregion
+        #endregion
 
         #region 消息接收
         /// <summary>
@@ -304,9 +305,9 @@ namespace ClientService{
         {
             //接收完成处理
             Socket socket = (Socket)ar.AsyncState;//获取socket
-            if (m_Closing|| !socket.Connected)
+            if (m_Closing || !socket.Connected)
             {
-                Debug.LogWarning($"和服务器的连接关闭中,或服Socket连接状态为False，不执行消息处理回调");
+                Debug.LogWarning($"客户端消息：和服务器的连接关闭中,或服Socket连接状态为False，不执行消息处理回调");
                 return;
             }
             try
@@ -325,21 +326,12 @@ namespace ClientService{
                 OnReceiveData();
                 ////检查是否需要扩容
                 m_ReadBuff.CheckAndMoveBytes();
-                //if (m_ReadBuff.Remain < 8)
-                //{
-                //    //完成解析或者这次接收的数据是分包数据
-                //    //剩余空间不足（容量-已经写入索引
-                //    m_ReadBuff.MoveBytes();//已经完成一轮解析，移动数据
-                //    m_ReadBuff.ReSize(m_ReadBuff.length * 2);//扩容
-                //}
-                //本轮消息处理完成后或者这次处理的数据有分包情况，开启下一次的异步监听，如果分包则继续接收未接收完成的数据
-                //等待下一次数据处理接收
                 m_Socket.BeginReceive(m_ReadBuff.Bytes, m_ReadBuff.WriteIndex, m_ReadBuff.Remain, 0, ReceiveCallBack, m_Socket);
 
             }
             catch (SocketException ex)
             {
-                Debug.LogErrorFormat("Socket数据接收完成处理失败 接收服务器数据失败:{0}",ex.ToString());
+                Debug.LogError($"Socket数据接收完成处理失败 接收服务器数据失败:{ex.ToString()}");
                 Close();
             }
         }
@@ -354,70 +346,8 @@ namespace ClientService{
                 {
                     Close();
                 });
-            /*旧数据处理方法
-            //确认数据是否有误
-            if (m_ReadBuff.length <= 4 || m_ReadBuff.ReadIndex < 0)
-            {
-                return;
-            }
-            //数据无误
-            int readIndex = m_ReadBuff.ReadIndex;
-            byte[] bytes = m_ReadBuff.Bytes;
-            //获取在字节头处存储的整段消息的长度信息
-            int bodyLength = BitConverter.ToInt32(bytes, readIndex);
-            if (m_ReadBuff.length < bodyLength + 4)
-            {
-                //如果消息长度小于读出来的消息长度
-                //此为分包，不包含完整数据
-                m_ReadBuff.MoveBytes();//已经完成一轮解析，移动数据
-                m_ReadBuff.ReSize(bodyLength + 8);//扩容，扩容的同时，保证长度信息也能被存入
-                return;
-            }
-            //存在完整数据
-            //协议名解析
-            m_ReadBuff.ReadIndex += 4;//移动开始读索引，让开前4位存储消息长度的位置
-            int nameCount = 0;
-            MyProtocolEnum protocol = MsgBase.DecodeName(m_ReadBuff.Bytes, m_ReadBuff.ReadIndex, out nameCount);//计算协议名长度
-            if (protocol == MyProtocolEnum.None)
-            {
-                Debug.LogError("解析协议名出错  OnReceiveData MsgBase.DecodeNmae fail，服务器发送数据可能存在问题，或者双端协议未同步，关闭链接");
-                Close();
-                return;
-            }
-            //读取没有问题，移动数组读取位，避开存储协议名的数组
-            m_ReadBuff.ReadIndex += nameCount;
-            //解析协议体-计算协议体长度
-            int bodyCount = bodyLength - nameCount;
-            try
-            {
-                MsgBase msgBase = MsgBase.Decode(protocol, m_ReadBuff.Bytes, m_ReadBuff.ReadIndex, bodyCount);
-                if (msgBase == null)
-                {
-                    Debug.LogError("接收数据协议内容解析出错");
-                    Close();
-                    return;
-                }
-                m_ReadBuff.ReadIndex += bodyCount;//移动读索引
-                m_ReadBuff.CheckAndMoveBytes();
-                //协议解析完成，协议具体操作
-                //放入消息处理队列
-                msgBase.targetSocket = m_Socket;
-                msgQueue.Enqueue(msgBase);
-                //检查是否还有数据
-                if (m_ReadBuff.length > 4)
-                {
-                    //还有数据，则有粘包继续处理数据
-                    OnReceiveData();
-                }
-            }
-            catch (SocketException ex)
-            {
-                Debug.LogErrorFormat("Socket解析协议体出错 Socket OnReceiveData Error:{0}", ex.ToString());
-                Close();
-            }
-            */
         }
-    #endregion
+        #endregion
 
         #region 消息发送处理
         /// <summary>
@@ -432,40 +362,24 @@ namespace ClientService{
             }
             if (m_Connecting)
             {
-                Debug.LogError("正在链接服务器中，无法发送消息");
+                Debug.LogWarning("正在链接服务器中，无法发送消息");
                 return;
             }
             if (m_Closing)
             {
-                Debug.LogError("正在关闭链接服务器中，无法发送消息");
+                Debug.LogWarning("正在关闭链接服务器中，无法发送消息");
                 return;
             }
             //写入数据
             try
             {
-                /*旧数据序列化方法
-                byte[] nameBytes = MsgBase.EncodeName(msgBase);//协议名编码
-                byte[] bodyBytes = MsgBase.Encond(msgBase);//编码协议体
-                int len = nameBytes.Length + bodyBytes.Length;//整体长度
-                byte[] byteHead = BitConverter.GetBytes(len);//转长度为字节，以字节数组的形式返回指定 32 位有符号整数值，占用四位
-                byte[] sendBytes = new byte[byteHead.Length + len];//创建发送空间
-                //组合
-                Array.Copy(byteHead, 0, sendBytes, 0, byteHead.Length);//组装头
-                Array.Copy(nameBytes, 0, sendBytes, byteHead.Length, nameBytes.Length);//组装协议名
-                Array.Copy(bodyBytes, 0, sendBytes, byteHead.Length + nameBytes.Length, bodyBytes.Length);//协议组合
-                ByteArray ba = new ByteArray(sendBytes);
-                */
                 ByteArray sendBytes = await MySocketTool.EncodMsg(msgBase);
                 //写入到队列，向服务器发送消息
                 m_WriteQueue.Enqueue(sendBytes);//放入队列
-                //if (m_WriteQueue.Count == 1)//如果队列内只有一条待发送信息，直接在主线程内处理
-                //{
-                //    m_Socket.BeginSend(sendBytes.Bytes, 0, sendBytes.length, 0, SendCallBack, m_Socket);
-                //}
             }
             catch (SocketException ex)
             {
-                Debug.LogErrorFormat("向服务器发送消息失败 SendMessage Error:{0}", ex.ToString());
+                Debug.LogError($"向服务器发送消息失败 SendMessage Error:{ex.ToString()}");
                 Close();
             }
         }
@@ -490,15 +404,7 @@ namespace ClientService{
                 {
                     ByteArray _bDelete;
                     m_WriteQueue.TryDequeue(out _bDelete);//取出但不使用，只为了从队列中移除
-                    ba=null;//发送完成，置空
-                    //if (m_WriteQueue.Count > 0)//如果还有数据
-                    //{
-                    //    m_WriteQueue.TryPeek(out ba);//取出新数据
-                    //}
-                    //else
-                    //{
-                    //    ba = null;
-                    //}
+                    ba = null;//发送完成，置空
                 }
                 //发送不完整，再次发送
                 if (ba != null)
@@ -507,6 +413,7 @@ namespace ClientService{
                 }
                 else if (m_Closing)
                 {
+                    Debug.LogWarning("正在断开链接");
                     //如果正在断开，最后一条也发送完整，则执行断开指令
                     RealClose();
                 }
@@ -526,7 +433,7 @@ namespace ClientService{
                 Close();
             }
         }
-    #endregion
+        #endregion
 
         #region 线程方法
 
@@ -554,13 +461,7 @@ namespace ClientService{
                         MsgPing _ServerMsg = msgBase as MsgPing;
                         //更新接收到的心跳包时间（后台运行）
                         lastPongTime = MySocketTool.GetTimeStamp();
-                        Debug.LogFormat("收到服务器返回的心跳包！！时间戳为：{0}，同时更新本地时间戳，时间戳为：{1}",
-                            _ServerMsg.timeStamp.ToString(),lastPongTime.ToString());
-                        //优化性能，只有在Debug下才能显示
-                        if (Debug.unityLogger.logEnabled)
-                        {
-                            MySocketTool.TimeDifference("客户端", lastPongTime, msgBase);
-                        }
+                        //Debug.LogFormat("收到服务器返回的心跳包！！时间戳为：{0}，同时更新本地时间戳，时间戳为：{1}", _ServerMsg.timeStamp.ToString(),lastPongTime.ToString());
                     }
                     else
                     {
@@ -568,10 +469,10 @@ namespace ClientService{
                         unityMsgQueue.Enqueue(msgBase);
                     }
                 }
-                else
-                {
-                    Debug.LogError("取出来空数据，请检查");
-                }
+                // else
+                // {
+                //     Debug.LogError($"取出来空数据，请检查");
+                // }
             }
         }
 
@@ -593,18 +494,16 @@ namespace ClientService{
                 if (timeNow - lastPingTime > m_PingInterval)
                 {
                     //规定时间到，发送心跳包到服务器
-                    MsgPing msgPing = new MsgPing();
-                    msgPing.timeStamp = timeNow;
+                    MsgPing msgPing = SendMsgMethod.SendMsgPing(timeNow);
                     SendMessage(msgPing).Forget();
                     lastPingTime = timeNow;
 
-                    Debug.LogFormat("向服务器发送一次心跳包");
                 }
                 //如果心跳包过长时间没收到，关闭链接
                 if (timeNow - lastPongTime > m_PingInterval * 4)
                 {
                     Close();
-                    Debug.LogWarningFormat("服务器返回心跳包超时");
+                    Debug.LogWarning("服务器返回心跳包超时");
                 }
             }
         }
@@ -622,15 +521,20 @@ namespace ClientService{
                 //队列里有消息等待发送
                 ByteArray _sendByte;
                 //取出消息队列内的消息，但不移除队列，以获取目标客户端
-                m_WriteQueue.TryPeek(out _sendByte); 
+                m_WriteQueue.TryPeek(out _sendByte);
                 //当前线程执行休眠，等待消息发送完成后继续
                 lock (msgSendThreadLock)
                 {
-                    if (m_Socket!=null&&m_Socket.Connected)
+                    if (m_Socket != null && m_Socket.Connected)
                     {
                         m_Socket.BeginSend(_sendByte.Bytes, 0, _sendByte.length, 0, SendCallBack, m_Socket);
                     }
-                    Monitor.Wait(msgSendThreadLock);
+                     bool istimeout=Monitor.Wait(msgSendThreadLock, 10000);
+                    if (!istimeout)
+                    {
+                        Debug.LogWarning($"客户端消息：消息发送时间超时（超过10s），请检查网络质量，关闭本客户端的链接");
+                        Close();
+                    }
                 }
             }
         }
@@ -642,7 +546,7 @@ namespace ClientService{
         /// <summary>
         /// 需要Unity处理的内容
         /// </summary>
-        public void Update()
+        internal void TCPUpdate()
         {
             if (!isInit)
             {
@@ -684,6 +588,50 @@ namespace ClientService{
 
                 }
             }
+            /*
+            //线程是否出错
+            if (m_msgThread != null)
+            {
+                if (m_msgThread.IsAlive == false && isInit == true)
+                {
+
+                    Debug.LogWarning("消息处理线程无效");
+                    //创建消息处理线程-后台处理
+                    m_msgThread = new Thread(MsgThread);
+                    m_msgThread.IsBackground = true;//设置为后台可运行
+                    m_msgThread.Start();//启动线程
+                }
+            }
+            //线程是否出错
+            if (m_HeartThread != null)
+            {
+                if (m_HeartThread.IsAlive == false && isInit == true)
+                {
+
+                    Debug.LogWarning("心跳包处理线程无效");
+                    //重新创建本线程
+                    //心跳包线程-后台处理
+                    m_HeartThread = new Thread(PingThread);
+                    m_HeartThread.IsBackground = true;//后台运行
+                    m_HeartThread.Start();
+                }
+            }
+            //线程是否出错
+            if (msgSendThread != null)
+            {
+                if (msgSendThread.IsAlive == false && isInit == true)
+                {
+
+                    Debug.LogWarning("消息发送处理线程无效");
+                    //重新创建本线程
+
+                    //消息发送线程
+                    msgSendThread = new Thread(MsgSendListenThread);
+                    msgSendThread.IsBackground = true;
+                    msgSendThread.Start();
+                }
+            }*/
+
         }
 
         /// <summary>
@@ -706,9 +654,9 @@ namespace ClientService{
                 }
             }
         }/// <summary>
-        /// 检查当前网络类型，是否切换了网络
-        /// </summary>
-        /// <returns></returns>
+         /// 检查当前网络类型，是否切换了网络
+         /// </summary>
+         /// <returns></returns>
         internal async UniTaskVoid AsyncCheckNetThread()
         {
             m_CurNetWork = Application.internetReachability;
@@ -724,22 +672,6 @@ namespace ClientService{
                     }
                 }
             }
-            //await foreach (var _ in UniTaskAsyncEnumerable.EveryUpdate())
-            //{
-            //    if (m_Socket == null)
-            //    {
-            //        return;
-            //    }
-
-            //    if (m_IsConnentSuccessed)
-            //    {
-            //        if (m_CurNetWork != Application.internetReachability)
-            //        {
-            //            ReConnect();
-            //            m_CurNetWork = Application.internetReachability;
-            //        }
-            //    }
-            //}
         }
         #endregion
 
@@ -776,8 +708,9 @@ namespace ClientService{
         {
             m_Socket.Close();
             ConnectEvent(NetEvent.Close);
-            Debug.Log("连接关闭 Close Socket");
+            Debug.Log("客户端消息：连接关闭 Close Socket");
             m_DiaoXian = true;
+            isThreadOver = true;
         }
         /// <summary>
         /// 重连服务器
@@ -787,7 +720,8 @@ namespace ClientService{
             Connect(m_IP, m_Port);
             m_ReConnect = true;
             ConnectEvent(NetEvent.ReConnect);
-            Debug.LogWarning("检测到服务器断开！！开始重新连接服务器");
+            Debug.LogWarning("客户端消息：检测到服务器断开！！开始重新连接服务器");
+            
         }
         internal void Quit()
         {
@@ -804,9 +738,9 @@ namespace ClientService{
             m_Connecting = false;
             m_IsConnentSuccessed = false;
             m_ReConnect = false;
-            m_Closing=false;
-            isThreadOver=true;
-            m_Socket=default;
+            m_Closing = false;
+            isThreadOver = true;
+            m_Socket = default;
             m_DiaoXian = false;
         }
         #endregion
@@ -821,7 +755,7 @@ namespace ClientService{
             {
                 return;
             }
-        
+
         }
         #endregion
     }

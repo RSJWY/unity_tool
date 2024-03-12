@@ -1,12 +1,13 @@
 using System.Net.Sockets;
 using System.Collections.Concurrent;
+using System;
 
 namespace ServerService
 {
     /// <summary>
     /// 服务器模块 单独客户端容器，存储客户端的相关信息等
     /// </summary>
-    public class ServerClientSocket
+    public class ClientSocket
     {
         /// <summary>
         /// 存储连接的客户端
@@ -17,19 +18,26 @@ namespace ServerService
         /// </summary>
         public long lastPingTime { get; set; }
         /// <summary>
-        /// 存储数据
+        /// 存储数据-接收到的数据暂存容器
         /// </summary>
-        public ByteArray ReadBuff = new ByteArray();
-
-        ///// <summary>
-        ///// 发送数据
-        ///// </summary>
-        //public ByteArray SendBuff = new ByteArray();
-
-        /// <summary>
-        /// 需要发送的数据队列
-        /// </summary>
-        public ConcurrentQueue<ByteArray> SendBuffQueue =new ConcurrentQueue<ByteArray>();
+        public ByteArray ReadBuff;
     }
-
+    /// <summary>
+    /// 服务器模块 消息发送数据容器
+    /// </summary>
+    public class ServerToClientMsg
+    {
+        /// <summary>
+        /// 消息目标服务器
+        /// </summary>
+        public Socket msgTargetSocket;
+        /// <summary>
+        /// 消息
+        /// </summary>
+        public MsgBase msg;
+        /// <summary>
+        /// 已转换完成的消息数组
+        /// </summary>
+        public ByteArray sendBytes;
+    }
 }

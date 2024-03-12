@@ -9,22 +9,29 @@ using UnityEngine;
 /// </summary>
 public class ClientController : MonoBehaviour
 {
-    static ClientController _instance;
-    public static ClientController instance { get { return _instance; } }
+    public static ClientController instance { get; private set; }
 
     /// <summary>
     /// 接收到消息后执行的回调
     /// </summary>
-    Dictionary<MyProtocolEnum, Action<MsgBase>> receiveMsgCallBack = new Dictionary<MyProtocolEnum, Action<MsgBase>>();
+    Dictionary<MyProtocolEnum, Action<MsgBase>> receiveMsgCallBack = new();
+
+    [Obsolete]
+    /// <summary>
+    /// 请求服务器的服务回调
+    /// </summary>
+    Dictionary<Guid, Action<MsgBase>> receiveRequestServerMsg = new();
     private void Awake()
     {
-        _instance = this;
+        instance = this;
         DontDestroyOnLoad(this);
+
     }
     void Update()
     {
-        TCPClientService.instance.Update();
+        TCPClientService.instance.TCPUpdate();
     }
+
 
     /// <summary>
     /// 向服务器发消息
@@ -51,6 +58,23 @@ public class ClientController : MonoBehaviour
         }
     }
     /// <summary>
+    /// 增加
+    /// </summary>
+    /// <param name="myProtocolEnum"></param>
+    /// <param name="action"></param>
+    [Obsolete]
+    public void AddReceiveMsgCallBack(Guid guid, Action<MsgBase> action)
+    {
+        if (receiveRequestServerMsg.ContainsKey(guid))
+        {
+            receiveRequestServerMsg[guid] += action;
+        }
+        else
+        {
+            receiveRequestServerMsg.Add(guid, action);
+        }
+    }
+    /// <summary>
     /// 移除
     /// </summary>
     /// <param name="myProtocolEnum"></param>
@@ -61,9 +85,26 @@ public class ClientController : MonoBehaviour
         {
             receiveMsgCallBack[myProtocolEnum] -= action;
         }
-        else
+        if (receiveMsgCallBack[myProtocolEnum] == null)
         {
-            receiveMsgCallBack.Add(myProtocolEnum, action);
+            receiveMsgCallBack.Remove(myProtocolEnum);
+        }
+    }
+    /// <summary>
+    /// 移除
+    /// </summary>
+    /// <param name="myProtocolEnum"></param>
+    /// <param name="action"></param>
+    [Obsolete]
+    public void RemoveReceiveMsgCallBack(Guid guid, Action<MsgBase> action)
+    {
+        if (receiveRequestServerMsg.ContainsKey(guid))
+        {
+            receiveRequestServerMsg[guid] -= action;
+        }
+        if (receiveRequestServerMsg[guid] == null)
+        {
+            receiveRequestServerMsg.Remove(guid);
         }
     }
     /// <summary>
@@ -76,6 +117,20 @@ public class ClientController : MonoBehaviour
         if (receiveMsgCallBack.ContainsKey(myProtocolEnum))
         {
             receiveMsgCallBack[myProtocolEnum]?.Invoke(msgBase);
+        }
+    }
+
+    /// <summary>
+    /// 使用
+    /// </summary>
+    /// <param name="myProtocolEnum"></param>
+    /// <param name="msgBase"></param>
+    [Obsolete]
+    internal void SendReceiveMsgCallBack(Guid guid, MsgBase msgBase)
+    {
+        if (receiveRequestServerMsg.ContainsKey(guid))
+        {
+            receiveRequestServerMsg[guid]?.Invoke(msgBase);
         }
     }
 

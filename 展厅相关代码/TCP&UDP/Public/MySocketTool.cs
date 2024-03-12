@@ -43,7 +43,7 @@ public static partial class MySocketTool
 
         //根据当前时区计算时间戳
         //TimeSpan ts = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo) - TimeZone.CurrentTimeZone.ToLocalTime(new System.DateTime(1970, 1, 1)); 
-        DateTimeOffset nowUtc = DateTimeOffset.UtcNow;  
+        DateTimeOffset nowUtc = DateTimeOffset.UtcNow;
         long timestamp = nowUtc.ToUnixTimeSeconds();
         return Convert.ToInt64(timestamp);
     }
@@ -53,9 +53,9 @@ public static partial class MySocketTool
     /// <param name="ServetOrClinet">服务器还是客户端，用作打印输出区分</param>
     /// <param name="NowTimeStamp">当前的时间戳</param>
     /// <param name="msgPing">心跳包类</param>
-    public static void TimeDifference(string ServetOrClinet, long LocalTimeStamp,MsgBase msgPing)
+    public static void TimeDifference(string ServetOrClinet, long LocalTimeStamp, MsgBase msgPing)
     {
-        MsgPing _msgPing= msgPing as MsgPing;
+        MsgPing _msgPing = msgPing as MsgPing;
         long RemoteTimeStamp = _msgPing.timeStamp;//获取远端传来的时间戳
         if (RemoteTimeStamp <= 0)
         {
@@ -81,7 +81,7 @@ public static partial class MySocketTool
     /// <param name="msgQueue">消息处理完后放入的队列</param>
     /// <param name="targetSocket">本条消息所属客户端</param>
     /// <param name="errorAction">发生错误时的回调</param>
-    internal static void DecodeMsg(ByteArray byteArray,ConcurrentQueue<MsgBase> msgQueue,Socket targetSocket,Action errorAction)
+    internal static void DecodeMsg(ByteArray byteArray, ConcurrentQueue<MsgBase> msgQueue, Socket targetSocket, Action errorAction)
     {
         //确认数据是否有误
         if (byteArray.length <= 4 || byteArray.ReadIndex < 0)
@@ -108,11 +108,10 @@ public static partial class MySocketTool
             return;
         }
         //接收完整，存在完整数据
-
         //协议名解析
         byteArray.ReadIndex += 4;//前四位存储字节流数组长度信息
         int nameCount = 0;//解析完协议名后要从哪开始读下一阶段的数据
-        MyProtocolEnum protocol = MsgBase.DecodeName(byteArray.Bytes, byteArray.ReadIndex, out nameCount);//解析协议名
+        MyProtocolEnum protocol = DecodeName(byteArray.Bytes, byteArray.ReadIndex, out nameCount);//解析协议名
         if (protocol == MyProtocolEnum.None)
         {
             Debug.LogErrorFormat("解析协议名出错,协议名不存在！！返回的协议名为: {0}", MyProtocolEnum.None.ToString());
@@ -122,11 +121,11 @@ public static partial class MySocketTool
         //读取没有问题
         byteArray.ReadIndex += nameCount;//移动开始读位置，开始解析协议体
         //解析协议体-计算协议体长度
-        int bodyCount = msgLength - nameCount-4;//剩余数组长度（剩余的长度就是协议体长度）要去掉校验码
+        int bodyCount = msgLength - nameCount - 4;//剩余数组长度（剩余的长度就是协议体长度）要去掉校验码
 
         //检查校验码
-        byte[] remoteCRC32Bytes =  byteArray.Bytes.Skip(byteArray.ReadIndex + bodyCount).Take(4).ToArray();//取校验码
-        byte[] bodyBytes = byteArray.Bytes.Skip(byteArray.ReadIndex ).Take(bodyCount).ToArray();//取数据体
+        byte[] remoteCRC32Bytes = byteArray.Bytes.Skip(byteArray.ReadIndex + bodyCount).Take(4).ToArray();//取校验码
+        byte[] bodyBytes = byteArray.Bytes.Skip(byteArray.ReadIndex).Take(bodyCount).ToArray();//取数据体
         uint localCRC32 = GetCrc32(bodyBytes);//获取协议体的CRC32校验码
         uint remoteCRC32 = ReverseBytesToCRC32(remoteCRC32Bytes); // 运算获取远端计算的验码
         if (localCRC32 != remoteCRC32)
@@ -139,28 +138,31 @@ public static partial class MySocketTool
         try
         {
             //解析协议体
-            MsgBase msgBase = MsgBase.Decode(protocol, byteArray.Bytes, byteArray.ReadIndex, bodyCount);
+            MsgBase msgBase = Decode(protocol, byteArray.Bytes, byteArray.ReadIndex, bodyCount);
             if (msgBase == null)
             {
                 Debug.LogErrorFormat("解析协议名出错！！无法匹配协议基类协议名不存在！！返回的协议名为: {0}", MyProtocolEnum.None.ToString());
                 errorAction.Invoke();
                 return;
             }
-            byteArray.ReadIndex += bodyCount+4;//要去掉校验码
-            //解析完成，移动数组，释放占用空间
-            //byteArray.CheckAndMoveBytes();
-            byteArray.MoveBytes();
-            //协议解析完成，处理协议
-            //把需要处理的信息放到消息队列中，交给线程处理
-            msgBase.targetSocket = targetSocket;//记录这组消息所属的客户端
-            msgQueue.Enqueue(msgBase);//添加到消息处理队列内
-
-            //继续处理
-            //如果允许读长度（并非整体数组长度）有容纳消息长度的空间，说明还有数据，
-            //这个为粘包，将所有数据传入，继续解析
-            if (byteArray.length > 4)
+            else
             {
-                DecodeMsg(byteArray,msgQueue,targetSocket,errorAction);
+
+                byteArray.ReadIndex += bodyCount + 4;//要去掉校验码
+                                                     //解析完成，移动数组，释放占用空间
+                                                     //byteArray.CheckAndMoveBytes();
+                byteArray.MoveBytes();
+                //协议解析完成，处理协议
+                //把需要处理的信息放到消息队列中，交给线程处理
+                msgBase.targetSocket = targetSocket;//记录这组消息所属的客户端
+                msgQueue.Enqueue(msgBase);//添加到消息处理队列内
+                //继续处理
+                //如果允许读长度（并非整体数组长度）有容纳消息长度的空间，说明还有数据，
+                //这个为粘包，将所有数据传入，继续解析
+                if (byteArray.length > 4)
+                {
+                    DecodeMsg(byteArray, msgQueue, targetSocket, errorAction);
+                }
             }
         }
         catch (SocketException ex)
@@ -180,17 +182,17 @@ public static partial class MySocketTool
     internal static async UniTask<ByteArray> EncodMsg(MsgBase msgBase)
     {
         await UniTask.SwitchToThreadPool();
-        
+
         //协议体编码
-        byte[] nameBytes = MsgBase.EncodeName(msgBase);//协议名编码
-        byte[] bodyBytes = MsgBase.Encond(msgBase);//编码协议体
+        byte[] nameBytes = EncodeName(msgBase);//协议名编码
+        byte[] bodyBytes = Encond(msgBase);//编码协议体
 
         //获取校验码
         uint crc32 = GetCrc32(bodyBytes);//获取协议体的CRC32校验码
         byte[] bodyCrc32Bytes = GetCrc32Bytes(crc32);//获取协议体的CRC32校验码数组
 
         //长度转数组
-        int len = nameBytes.Length + bodyBytes.Length+ bodyCrc32Bytes.Length;//整体长度
+        int len = nameBytes.Length + bodyBytes.Length + bodyCrc32Bytes.Length;//整体长度
         byte[] byteHead = BitConverter.GetBytes(len);//转长度为字节
         byte[] sendBytes = new byte[byteHead.Length + len];//创建发送空间
 
@@ -198,12 +200,12 @@ public static partial class MySocketTool
         Array.Copy(byteHead, 0, sendBytes, 0, byteHead.Length);//组装头
         Array.Copy(nameBytes, 0, sendBytes, byteHead.Length, nameBytes.Length);//组装协议名
         Array.Copy(bodyBytes, 0, sendBytes, byteHead.Length + nameBytes.Length, bodyBytes.Length);//组装协议体
-        Array.Copy(bodyCrc32Bytes, 0, sendBytes, byteHead.Length + nameBytes.Length+ bodyBytes.Length, bodyCrc32Bytes.Length);//组装校验码
+        Array.Copy(bodyCrc32Bytes, 0, sendBytes, byteHead.Length + nameBytes.Length + bodyBytes.Length, bodyCrc32Bytes.Length);//组装校验码
 
         //将拼接好的信息用自定义的消息数组保存
         ByteArray ba = new ByteArray(sendBytes);
         await UniTask.SwitchToMainThread();
         return ba;
     }
-   
+
 }

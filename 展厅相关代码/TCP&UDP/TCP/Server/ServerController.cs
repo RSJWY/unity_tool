@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using Cysharp.Threading.Tasks;
 using ServerService;
 using UnityEngine;
 
@@ -9,26 +10,25 @@ using UnityEngine;
 /// <summary>
 /// 服务器模块管理器，用于和Unity之间交互
 /// </summary>
-public class ServerController : MonoBehaviour
+public class  ServerController : MonoBehaviour
 {
-    static ServerController _instance;
-    public static ServerController instance { get { return _instance; } }
+    public static ServerController instance { get;private set; }
     /// <summary>
     /// 接收到消息后执行的回调
     /// </summary>
-    Dictionary<MyProtocolEnum, Action<MyProtocolEnum, MsgBase>> receiveMsgCallBack = new Dictionary<MyProtocolEnum, Action<MyProtocolEnum, MsgBase>>();
+    Dictionary<MyProtocolEnum, Action<ClientSocket,MsgBase>> receiveMsgCallBack = new();
 
     // Start is called before the first frame update
     void Awake()
     {
-        _instance=this;
+        instance=this;
         DontDestroyOnLoad(this);
     }
 
     // Update is called once per frame
     void Update()
     {
-        TCPServerService.instance.Update();
+        TCPServerService.instance.TCPUpdate();
     }
 
     /// <summary>
@@ -47,7 +47,7 @@ public class ServerController : MonoBehaviour
     /// </summary>
     /// <param name="myProtocolEnum"></param>
     /// <param name="action"></param>
-    public void  AddReceiveMsgCallBack(MyProtocolEnum myProtocolEnum, Action< MyProtocolEnum,MsgBase> action)
+    public void  AddReceiveMsgCallBack(MyProtocolEnum myProtocolEnum, Action< ClientSocket,MsgBase> action)
     {
         if (receiveMsgCallBack.ContainsKey(myProtocolEnum))
         {
@@ -63,7 +63,7 @@ public class ServerController : MonoBehaviour
     /// </summary>
     /// <param name="myProtocolEnum"></param>
     /// <param name="action"></param>
-    public void RemoveReceiveMsgCallBack(MyProtocolEnum myProtocolEnum, Action<MyProtocolEnum, MsgBase> action)
+    public void RemoveReceiveMsgCallBack(MyProtocolEnum myProtocolEnum, Action<ClientSocket, MsgBase> action)
     {
         if (receiveMsgCallBack.ContainsKey(myProtocolEnum))
         {
@@ -79,18 +79,18 @@ public class ServerController : MonoBehaviour
     /// </summary>
     /// <param name="myProtocolEnum"></param>
     /// <param name="msgBase"></param>
-    internal void SendReceiveMsgCallBack(MyProtocolEnum myProtocolEnum, MsgBase msgBase)
+    internal void SendReceiveMsgCallBack(MyProtocolEnum myProtocolEnum,ClientSocket serverClientSocket, MsgBase msgBase)
     {
         if (receiveMsgCallBack.ContainsKey(myProtocolEnum))
         {
-            receiveMsgCallBack[myProtocolEnum]?.Invoke(myProtocolEnum, msgBase);
+            receiveMsgCallBack[myProtocolEnum]?.Invoke(serverClientSocket, msgBase);
         }
     }
 
     public void InitServer(string ip,int port)
     {
         //检查是不是监听全部IP
-        if (ip!="Any")
+        if (ip!="any")
         {
             //指定IP
             //检查IP和Port是否合法
